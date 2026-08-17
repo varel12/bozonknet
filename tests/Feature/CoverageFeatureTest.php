@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AreaRequest;
+use App\Models\CustomerSubscription;
 use App\Models\Village;
 use Database\Seeders\BozonkNetSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -86,5 +87,55 @@ class CoverageFeatureTest extends TestCase
         $errors = json_decode($response->getContent(), true, flags: JSON_THROW_ON_ERROR);
 
         $this->assertSame('Nomor WhatsApp tidak valid.', $errors['errors']['whatsapp'][0]);
+    }
+
+    public function test_customer_can_submit_a_subscription_for_available_village(): void
+    {
+        $village = Village::query()->where('name', 'Bojonggede')->firstOrFail();
+
+        $this->postJson(route('subscriptions.store'), [
+            'name' => 'Siti Aminah',
+            'whatsapp' => '0812-6464-4446',
+            'email' => 'siti@example.com',
+            'billing_day' => 5,
+            'village_id' => $village->id,
+            'address' => 'Rumah nomor 12, RT 01/RW 05, dekat terminal.',
+            'latitude' => -6.4406,
+            'longitude' => 106.8083,
+            'plan_code' => 'standard',
+        ])->assertCreated()->assertJsonStructure(['message', 'subscription_id']);
+
+        $this->assertDatabaseHas(CustomerSubscription::class, [
+            'name' => 'Siti Aminah',
+            'email' => 'siti@example.com',
+            'billing_day' => 5,
+            'village_id' => $village->id,
+            'street_address' => 'Rumah nomor 12, RT 01/RW 05, dekat terminal.',
+            'plan_code' => 'standard',
+            'plan_name' => 'Internet Standard',
+            'monthly_price' => 249750,
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_subscription_rejects_unavailable_village(): void
+    {
+        $village = Village::query()->where('name', 'Susukan')->firstOrFail();
+
+        $this->postJson(route('subscriptions.store'), [
+            'name' => 'Siti Aminah',
+            'whatsapp' => '0812-6464-4446',
+            'email' => 'siti@example.com',
+            'billing_day' => 3,
+            'village_id' => $village->id,
+            'address' => 'Alamat lengkap Susukan.',
+            'plan_code' => 'basic',
+        ])->assertUnprocessable()
+            ->assertJsonPath('errors.village_id.0', 'Desa yang dipilih belum berada dalam cakupan aktif.');
+
+        $this->assertDatabaseMissing(CustomerSubscription::class, [
+            'email' => 'siti@example.com',
+            'village_id' => $village->id,
+        ]);
     }
 }

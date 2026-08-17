@@ -14,6 +14,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(BozonkNetSeeder::class);
+        $this->call([
+            BozonkNetSeeder::class,
+            InternalAccountSeeder::class,
+        ]);
     }
 }

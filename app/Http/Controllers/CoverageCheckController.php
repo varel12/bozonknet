@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CoverageArea;
+use App\Models\Odp;
 use App\Models\Village;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,6 +24,34 @@ class CoverageCheckController extends Controller
 
         $latitude = (float) ($village?->latitude ?? $validated['latitude']);
         $longitude = (float) ($village?->longitude ?? $validated['longitude']);
+
+        $coveredByOdp = false;
+        if ($village) {
+            $coveredByOdp = Odp::query()
+                ->where(function ($query) use ($village) {
+                    $query->where('village_name', $village->name)
+                        ->orWhere('address', 'like', "%{$village->name}%");
+                })
+                ->where(function ($query) {
+                    $query->whereIn('status', ['Available', 'active'])
+                        ->where('available_ports', '>', 0);
+                })
+                ->exists();
+        }
+
+        if ($coveredByOdp) {
+            return response()->json([
+                'status' => Village::STATUS_AVAILABLE,
+                'label' => 'Tercover',
+                'title' => 'Jaringan BozonkNet tersedia',
+                'description' => 'Desa ini memiliki ODP aktif dan dapat melanjutkan proses berlangganan.',
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'distance_meters' => 0,
+                'location' => "Desa {$village->name}, Kecamatan {$village->district}",
+            ]);
+        }
+
         $area = CoverageArea::query()->where('is_active', true)->firstOrFail();
         $distance = $this->distanceInMeters(
             $latitude,

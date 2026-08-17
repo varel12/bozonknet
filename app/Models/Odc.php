@@ -6,19 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Odp extends Model
+class Odc extends Model
 {
     protected $fillable = [
-        'odc_id',
+        'olt_id',
         'code',
         'name',
-        'address',
-        'village_name',
         'latitude',
         'longitude',
-        'total_ports',
-        'used_ports',
-        'available_ports',
         'status',
     ];
 
@@ -27,19 +22,16 @@ class Odp extends Model
         return [
             'latitude' => 'float',
             'longitude' => 'float',
-            'total_ports' => 'integer',
-            'used_ports' => 'integer',
-            'available_ports' => 'integer',
         ];
     }
 
-    public function odc(): BelongsTo
+    public function olt(): BelongsTo
     {
-        return $this->belongsTo(Odc::class);
+        return $this->belongsTo(Olt::class);
     }
 
-    public function customers(): HasMany
+    public function odps(): HasMany
     {
-        return $this->hasMany(CustomerSubscription::class);
+        return $this->hasMany(Odp::class);
     }
 }

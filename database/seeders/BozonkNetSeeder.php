@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\CoverageArea;
+use App\Models\InternetPackage;
 use App\Models\Odp;
 use App\Models\Village;
 use Illuminate\Database\Seeder;
@@ -48,7 +49,26 @@ class BozonkNetSeeder extends Seeder
         ];
 
         foreach ($odps as $odp) {
+            $odp['village_name'] = $odp['address'];
+            $odp['available_ports'] = max(0, $odp['total_ports'] - $odp['used_ports']);
+            $odp['status'] = $odp['status'] === 'planned'
+                ? 'Unmapped'
+                : ($odp['available_ports'] === 0 ? 'Full' : 'Available');
+
             Odp::query()->updateOrCreate(['code' => $odp['code']], $odp);
+        }
+
+        $packages = [
+            ['code' => 'basic', 'name' => 'Internet Basic', 'speed_mbps' => 20, 'price' => 165_500, 'description' => 'Untuk browsing, media sosial, belajar online, dan streaming berkualitas standar.'],
+            ['code' => 'standard', 'name' => 'Internet Standard', 'speed_mbps' => 30, 'price' => 249_750, 'description' => 'Untuk streaming HD, game online, konferensi video, dan aktivitas keluarga.'],
+            ['code' => 'premium', 'name' => 'Internet Premium', 'speed_mbps' => 50, 'price' => 299_750, 'description' => 'Untuk streaming 4K, game online, serta unggah dan unduh file berukuran besar.'],
+        ];
+
+        foreach ($packages as $package) {
+            InternetPackage::query()->updateOrCreate(
+                ['code' => $package['code']],
+                [...$package, 'is_active' => true],
+            );
         }
     }
 }

@@ -6,6 +6,8 @@
 .phpactor.json
 .phpunit.result.cache
 /.codex
+/.agents
+/.video-tools
 /compose.override.yaml
 /.cursor/
 /.idea
@@ -22,6 +24,8 @@
 /storage/*.key
 /storage/pail
 /vendor
+netlify-preview/
+*.mp4
 _ide_helper.php
 Homestead.json
 Homestead.yaml
